@@ -1,12 +1,12 @@
 # dependencies
 /node_modules
+/backend/node_modules
 
-# next.js
+# builds
 /.next/
 /out/
-
-# production
 /build
+/backend/dist/
 
 # local files
 .DS_Store
@@ -20,6 +20,8 @@ yarn-error.log*
 
 # environment
 .env*
+!.env.example
+!backend/.env.example
 
 # typescript
 *.tsbuildinfo

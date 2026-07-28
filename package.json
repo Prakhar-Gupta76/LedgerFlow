@@ -5,9 +5,15 @@
   "packageManager": "pnpm@7.18.2",
   "scripts": {
     "dev": "next dev",
+    "dev:web": "next dev",
+    "dev:api": "pnpm --dir backend dev",
     "build": "next build",
+    "build:web": "next build",
+    "build:api": "pnpm --dir backend build",
+    "build:all": "pnpm build:web && pnpm build:api",
     "start": "next start",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "migrate": "pnpm --dir backend migrate"
   },
   "dependencies": {
     "lucide-react": "0.468.0",

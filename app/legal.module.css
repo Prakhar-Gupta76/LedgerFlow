@@ -1,0 +1,69 @@
+.page {
+  min-height: 100vh;
+  padding: 32px 24px 80px;
+  background: #f7f8f3;
+  color: #14211b;
+}
+
+.header,
+.article {
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 48px;
+}
+
+.brand {
+  color: #14211b;
+  font-size: 20px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.back {
+  color: #47705d;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.article {
+  padding: clamp(28px, 6vw, 64px);
+  border: 1px solid #dde4dc;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgb(27 54 41 / 7%);
+}
+
+.article h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(34px, 7vw, 56px);
+  letter-spacing: -0.045em;
+}
+
+.article h2 {
+  margin: 36px 0 10px;
+  font-size: 20px;
+}
+
+.article p,
+.article li {
+  color: #58665f;
+  line-height: 1.75;
+}
+
+.article ul {
+  padding-left: 22px;
+}
+
+.version {
+  color: #658675;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
