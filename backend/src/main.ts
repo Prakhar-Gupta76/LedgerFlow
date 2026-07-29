@@ -15,8 +15,8 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors({
     origin: frontendOrigin.split(",").map((origin) => origin.trim()),
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "X-Request-Id"],
+    methods: ["GET", "POST", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Authorization", "Content-Type", "X-Request-Id"],
     credentials: true,
   });
   app.useGlobalPipes(

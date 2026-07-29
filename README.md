@@ -22,6 +22,14 @@ receive the same public response for known and unknown email addresses.
 Completing a reset changes the password and revokes existing sessions in one
 transaction.
 
+## Customer dashboard
+
+`GET /api/v1/dashboard` requires a short-lived access token and composes the
+authenticated customer’s overview from `users`, `wallets`, `transfers`,
+`wallet_daily_summaries`, and `notifications`. It never accepts a user ID from
+the browser and does not mutate financial state. Notifications are marked read
+only through their dedicated protected endpoint.
+
 ## Local setup
 
 Requirements: Node.js 20+, pnpm 7+, and PostgreSQL 16 (or Docker).

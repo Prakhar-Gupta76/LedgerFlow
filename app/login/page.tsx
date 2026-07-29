@@ -166,8 +166,8 @@ export default function LoginPage() {
               <strong>{login.user.email}</strong>
             </span>
           </div>
-          <Link className={styles.primaryButton} href="/">
-            Continue to LedgerFlow
+          <Link className={styles.primaryButton} href="/dashboard">
+            Continue to dashboard
             <ArrowRight size={18} />
           </Link>
         </section>

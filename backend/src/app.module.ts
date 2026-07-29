@@ -6,6 +6,7 @@ import { RegistrationModule } from "./registration/registration.module";
 import { DatabaseModule } from "./database/database.module";
 import { HealthController } from "./health.controller";
 import { AuthenticationModule } from "./authentication/authentication.module";
+import { DashboardModule } from "./dashboard/dashboard.module";
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AuthenticationModule } from "./authentication/authentication.module";
     DatabaseModule,
     RegistrationModule,
     AuthenticationModule,
+    DashboardModule,
   ],
   controllers: [HealthController],
   providers: [
