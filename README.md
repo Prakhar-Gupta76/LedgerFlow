@@ -30,6 +30,14 @@ authenticated customer’s overview from `users`, `wallets`, `transfers`,
 the browser and does not mutate financial state. Notifications are marked read
 only through their dedicated protected endpoint.
 
+## Add virtual funds
+
+`POST /api/v1/wallet/add-funds` adds simulated INR funds in one PostgreSQL
+transaction. It locks the wallet, applies an idempotency key, updates the
+authoritative balance, posts equal system debit and wallet credit entries,
+queues notification/analytics/audit jobs, and completes the funding record
+together. No card, bank, CVV, UPI, or real payment data is collected.
+
 ## Local setup
 
 Requirements: Node.js 20+, pnpm 7+, and PostgreSQL 16 (or Docker).

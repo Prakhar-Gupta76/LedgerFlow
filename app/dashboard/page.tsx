@@ -295,7 +295,7 @@ export default function DashboardPage() {
             <Send size={18} />
             Send money
           </Link>
-          <Link href="/add-funds">
+          <Link href="/wallet/add-funds">
             <CircleDollarSign size={18} />
             Add funds
           </Link>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
               <p>Wallet · {data.wallet.walletNumber}</p>
               <div className={styles.balanceActions}>
                 <Link href="/send"><Send size={16} /> Send money</Link>
-                <Link href="/add-funds"><Plus size={16} /> Add funds</Link>
+                <Link href="/wallet/add-funds"><Plus size={16} /> Add funds</Link>
                 <Link href="/transactions"><ReceiptText size={16} /> History</Link>
               </div>
               <div className={styles.cardOrb} />

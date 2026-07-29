@@ -50,6 +50,7 @@ export class RegistrationService {
 
     const userId = randomUUID();
     const walletId = randomUUID();
+    const ledgerAccountId = randomUUID();
     const backgroundJobId = randomUUID();
     const walletNumber = this.createWalletNumber();
     const acceptedDocumentIds = [...new Set(dto.acceptedLegalDocumentIds)];
@@ -164,6 +165,27 @@ export class RegistrationService {
           VALUES ($1, $2, $3, 'INR', 0, 'ACTIVE')
         `,
         [walletId, walletNumber, userId],
+      );
+
+      await client.query(
+        `
+          INSERT INTO ledger_accounts (
+            id,
+            account_code,
+            account_type,
+            wallet_id,
+            name,
+            currency,
+            status
+          )
+          VALUES ($1, $2, 'USER_WALLET', $3, $4, 'INR', 'ACTIVE')
+        `,
+        [
+          ledgerAccountId,
+          `UW-${walletNumber}`,
+          walletId,
+          `${dto.fullName}'s INR wallet`,
+        ],
       );
 
       await client.query(
