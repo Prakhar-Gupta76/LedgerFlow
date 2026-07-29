@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { RegistrationModule } from "./registration/registration.module";
 import { DatabaseModule } from "./database/database.module";
 import { HealthController } from "./health.controller";
+import { AuthenticationModule } from "./authentication/authentication.module";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { HealthController } from "./health.controller";
     ]),
     DatabaseModule,
     RegistrationModule,
+    AuthenticationModule,
   ],
   controllers: [HealthController],
   providers: [

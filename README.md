@@ -1,7 +1,7 @@
 # LedgerFlow
 
 LedgerFlow is a portfolio digital-wallet MVP. The web app uses Next.js, while
-the registration API uses NestJS and PostgreSQL.
+the account and authentication API uses NestJS and PostgreSQL.
 
 ## Registration flow
 
@@ -9,6 +9,18 @@ the registration API uses NestJS and PostgreSQL.
 user, password hash, exact legal-document consent records, first INR wallet,
 and a pending `USER_REGISTERED` background job. Any failure rolls the entire
 registration back.
+
+## Login and recovery flow
+
+`POST /api/v1/auth/login` verifies credentials, applies temporary lockouts,
+records an authentication event, and creates a renewable session. The raw
+refresh token is kept only in a secure HTTP-only cookie; PostgreSQL stores its
+SHA-256 hash.
+
+Password recovery uses single-use, 15-minute reset tokens. Reset requests
+receive the same public response for known and unknown email addresses.
+Completing a reset changes the password and revokes existing sessions in one
+transaction.
 
 ## Local setup
 
@@ -29,8 +41,9 @@ pnpm dev:api
 pnpm dev:web
 ```
 
-Open [http://localhost:3000/register](http://localhost:3000/register). The API
-runs at `http://localhost:4000/api/v1`.
+Open [http://localhost:3000/register](http://localhost:3000/register) or
+[http://localhost:3000/login](http://localhost:3000/login). The API runs at
+`http://localhost:4000/api/v1`.
 
 For Neon, replace `DATABASE_URL` in `backend/.env` with the Neon connection
 string and set `DATABASE_SSL=true` before running `pnpm migrate`.
