@@ -59,6 +59,24 @@ type LedgerAccountRow = {
   wallet_id: string;
 };
 
+type TransferResultRow = {
+  id: string;
+  transfer_reference: string;
+  amount_minor: string;
+  currency: string;
+  note: string | null;
+  status: "PENDING" | "COMPLETED" | "FAILED" | "REVERSED";
+  sender_balance_before_minor: string | null;
+  sender_balance_after_minor: string | null;
+  failure_code: string | null;
+  initiated_at: Date;
+  completed_at: Date | null;
+  failed_at: Date | null;
+  reversed_at: Date | null;
+  recipient_name: string;
+  recipient_wallet_number: string;
+};
+
 @Injectable()
 export class TransfersService {
   private readonly maximumAmountMinor: number;
@@ -105,6 +123,67 @@ export class TransfersService {
       maximumAmountMinor: this.maximumAmountMinor,
       canTransfer:
         wallet.user_status === "ACTIVE" && wallet.wallet_status === "ACTIVE",
+    };
+  }
+
+  async getTransferResult(userId: string, transferId: string) {
+    const result = await this.database.query<TransferResultRow>(
+      `
+        SELECT
+          t.id,
+          t.transfer_reference,
+          t.amount_minor,
+          t.currency,
+          t.note,
+          t.status,
+          t.sender_balance_before_minor,
+          t.sender_balance_after_minor,
+          t.failure_code,
+          t.initiated_at,
+          t.completed_at,
+          t.failed_at,
+          t.reversed_at,
+          receiver_user.full_name AS recipient_name,
+          receiver_wallet.wallet_number AS recipient_wallet_number
+        FROM transfers t
+        JOIN wallets sender_wallet ON sender_wallet.id = t.sender_wallet_id
+        JOIN wallets receiver_wallet ON receiver_wallet.id = t.receiver_wallet_id
+        JOIN users receiver_user ON receiver_user.id = receiver_wallet.user_id
+        WHERE t.id = $1
+          AND t.initiated_by_user_id = $2
+          AND sender_wallet.user_id = $2
+      `,
+      [transferId, userId],
+    );
+    const transfer = result.rows[0];
+    if (!transfer) {
+      throw new NotFoundException({
+        code: "TRANSFER_NOT_FOUND",
+        message: "Transfer not found.",
+      });
+    }
+    const failure = this.safeFailure(transfer.failure_code);
+    return {
+      id: transfer.id,
+      transferReference: transfer.transfer_reference,
+      amountMinor: transfer.amount_minor,
+      currency: transfer.currency.trim(),
+      note: transfer.note,
+      status: transfer.status,
+      recipient: {
+        fullName: transfer.recipient_name,
+        maskedWalletNumber: this.maskWalletNumber(
+          transfer.recipient_wallet_number,
+        ),
+      },
+      senderBalanceBeforeMinor: transfer.sender_balance_before_minor,
+      senderBalanceAfterMinor: transfer.sender_balance_after_minor,
+      failureMessage: transfer.status === "FAILED" ? failure.message : null,
+      retryable: transfer.status === "FAILED" && failure.retryable,
+      initiatedAt: transfer.initiated_at.toISOString(),
+      completedAt: transfer.completed_at?.toISOString() ?? null,
+      failedAt: transfer.failed_at?.toISOString() ?? null,
+      reversedAt: transfer.reversed_at?.toISOString() ?? null,
     };
   }
 
@@ -537,6 +616,45 @@ export class TransfersService {
     const time = Date.now().toString(36).toUpperCase();
     const entropy = randomBytes(5).toString("hex").toUpperCase();
     return `LFTR${time}${entropy}`.slice(0, 24);
+  }
+
+  private safeFailure(code: string | null) {
+    const failures: Record<string, { message: string; retryable: boolean }> = {
+      INSUFFICIENT_FUNDS: {
+        message: "You do not have enough balance for this transfer.",
+        retryable: false,
+      },
+      TRANSFER_LIMIT_EXCEEDED: {
+        message: "This transfer exceeds the permitted limit.",
+        retryable: false,
+      },
+      RECIPIENT_UNAVAILABLE: {
+        message: "The selected recipient cannot receive this transfer.",
+        retryable: false,
+      },
+      WALLET_UNAVAILABLE: {
+        message: "Your wallet is currently unavailable.",
+        retryable: false,
+      },
+      CURRENCY_MISMATCH: {
+        message: "The wallets do not support the same currency.",
+        retryable: false,
+      },
+      PROCESSING_ERROR: {
+        message: "The transfer could not be completed. Please try again later.",
+        retryable: true,
+      },
+    };
+    return (
+      failures[code ?? ""] ?? {
+        message: "The transfer could not be completed. Please try again later.",
+        retryable: false,
+      }
+    );
+  }
+
+  private maskWalletNumber(walletNumber: string) {
+    return `•••• ${walletNumber.slice(-4)}`;
   }
 
   private walletNotFound() {

@@ -279,6 +279,7 @@ export default function SendMoneyPage() {
           : current,
       );
       setFlowStatus("success");
+      router.push(`/transfers/result/${transferResult.transferId}`);
     } catch (transferError) {
       setFlowStatus("confirming");
       setApiError(

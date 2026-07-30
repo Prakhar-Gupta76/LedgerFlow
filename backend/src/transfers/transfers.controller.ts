@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -24,6 +26,14 @@ export class TransfersController {
   @Get("context")
   getContext(@Req() request: AuthenticatedRequest) {
     return this.transfers.getContext(request.user.sub);
+  }
+
+  @Get("result/:transferId")
+  getTransferResult(
+    @Req() request: AuthenticatedRequest,
+    @Param("transferId", new ParseUUIDPipe()) transferId: string,
+  ) {
+    return this.transfers.getTransferResult(request.user.sub, transferId);
   }
 
   @Get("recipients/lookup")

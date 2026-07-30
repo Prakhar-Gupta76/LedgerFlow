@@ -47,6 +47,14 @@ ledger entries are posted, and notification/analytics/audit jobs are queued.
 Exact recipient lookup is protected, rate-limited, and returns only a safe
 preview. Sender-wallet idempotency prevents duplicate transfers.
 
+## Transfer result
+
+`GET /api/v1/transfers/result/:id` is a sender-only, read-only result endpoint.
+It returns the committed transfer state, safe recipient preview, reference,
+timestamps, optional note, and the sender’s historical balance immediately
+after the transfer. Missing and unauthorized transfers share the same not-found
+response. Pending results are polled without resubmitting the transfer.
+
 ## Local setup
 
 Requirements: Node.js 20+, pnpm 7+, and PostgreSQL 16 (or Docker).
