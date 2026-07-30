@@ -9,6 +9,7 @@ import { AuthenticationModule } from "./authentication/authentication.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { FundingModule } from "./funding/funding.module";
 import { TransfersModule } from "./transfers/transfers.module";
+import { TransactionHistoryModule } from "./transaction-history/transaction-history.module";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TransfersModule } from "./transfers/transfers.module";
     DashboardModule,
     FundingModule,
     TransfersModule,
+    TransactionHistoryModule,
   ],
   controllers: [HealthController],
   providers: [

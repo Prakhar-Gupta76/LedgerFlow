@@ -55,6 +55,15 @@ timestamps, optional note, and the sender’s historical balance immediately
 after the transfer. Missing and unauthorized transfers share the same not-found
 response. Pending results are polled without resubmitting the transfer.
 
+## Transaction history
+
+`GET /api/v1/transactions` returns the authenticated wallet's unified activity
+feed from the `wallet_activity_history` database view. Search, date, type,
+direction, status, and amount filters use stable cursor pagination. Summary
+totals count only completed monetary activity. `GET
+/api/v1/transactions/export` applies the same authorized filters to a CSV
+download without storing export records.
+
 ## Local setup
 
 Requirements: Node.js 20+, pnpm 7+, and PostgreSQL 16 (or Docker).
