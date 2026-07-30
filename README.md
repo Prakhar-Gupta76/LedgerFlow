@@ -81,6 +81,15 @@ cursor-paginated posted entries. `GET /api/v1/wallet/statement/export` applies
 the same authorized period query to CSV; the page also provides a print/PDF
 layout.
 
+## Analytics
+
+`GET /api/v1/analytics` reads replaceable daily wallet and counterparty
+summaries for a selected period. A lightweight PostgreSQL-backed worker
+processes funding and transfer analytics jobs idempotently—without Kafka—and
+updates totals, volume points, frequent recipients, averages, success rates,
+and freshness metadata. Analytics remains informational and never determines
+the authoritative wallet balance.
+
 ## Local setup
 
 Requirements: Node.js 20+, pnpm 7+, and PostgreSQL 16 (or Docker).

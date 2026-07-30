@@ -6,6 +6,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Bell,
+  BarChart3,
   ChevronRight,
   CircleDollarSign,
   Clock3,
@@ -290,6 +291,14 @@ export default function DashboardPage() {
           <Link href="/transactions">
             <ReceiptText size={18} />
             Transactions
+          </Link>
+          <Link href="/wallet/statement">
+            <CreditCard size={18} />
+            Wallet statement
+          </Link>
+          <Link href="/analytics">
+            <BarChart3 size={18} />
+            Analytics
           </Link>
           <Link href="/transfers/new">
             <Send size={18} />

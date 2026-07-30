@@ -11,6 +11,7 @@ import { FundingModule } from "./funding/funding.module";
 import { TransfersModule } from "./transfers/transfers.module";
 import { TransactionHistoryModule } from "./transaction-history/transaction-history.module";
 import { WalletStatementModule } from "./wallet-statement/wallet-statement.module";
+import { AnalyticsModule } from "./analytics/analytics.module";
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { WalletStatementModule } from "./wallet-statement/wallet-statement.modul
     TransfersModule,
     TransactionHistoryModule,
     WalletStatementModule,
+    AnalyticsModule,
   ],
   controllers: [HealthController],
   providers: [
