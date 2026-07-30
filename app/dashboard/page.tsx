@@ -291,7 +291,7 @@ export default function DashboardPage() {
             <ReceiptText size={18} />
             Transactions
           </Link>
-          <Link href="/send">
+          <Link href="/transfers/new">
             <Send size={18} />
             Send money
           </Link>
@@ -385,7 +385,7 @@ export default function DashboardPage() {
               <strong>{formatMoney(data.wallet.balanceMinor, data.wallet.currency)}</strong>
               <p>Wallet · {data.wallet.walletNumber}</p>
               <div className={styles.balanceActions}>
-                <Link href="/send"><Send size={16} /> Send money</Link>
+                <Link href="/transfers/new"><Send size={16} /> Send money</Link>
                 <Link href="/wallet/add-funds"><Plus size={16} /> Add funds</Link>
                 <Link href="/transactions"><ReceiptText size={16} /> History</Link>
               </div>

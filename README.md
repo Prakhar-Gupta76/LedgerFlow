@@ -38,6 +38,15 @@ authoritative balance, posts equal system debit and wallet credit entries,
 queues notification/analytics/audit jobs, and completes the funding record
 together. No card, bank, CVV, UPI, or real payment data is collected.
 
+## Send money
+
+`POST /api/v1/transfers` moves virtual INR between two active customer wallets
+in one transaction. Both wallets are locked in stable order, the sender debit
+uses a non-negative conditional update, the receiver is credited, balanced
+ledger entries are posted, and notification/analytics/audit jobs are queued.
+Exact recipient lookup is protected, rate-limited, and returns only a safe
+preview. Sender-wallet idempotency prevents duplicate transfers.
+
 ## Local setup
 
 Requirements: Node.js 20+, pnpm 7+, and PostgreSQL 16 (or Docker).
