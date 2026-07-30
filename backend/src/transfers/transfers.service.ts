@@ -486,11 +486,12 @@ export class TransfersService {
             ledger_account_id,
             entry_type,
             amount_minor,
-            currency
+            currency,
+            account_balance_after_minor
           )
           VALUES
-            ($1, $2, $3, 'DEBIT', $4, $5),
-            ($6, $2, $7, 'CREDIT', $4, $5)
+            ($1, $2, $3, 'DEBIT', $4, $5, $8),
+            ($6, $2, $7, 'CREDIT', $4, $5, $9)
         `,
         [
           randomUUID(),
@@ -500,6 +501,8 @@ export class TransfersService {
           dto.currency,
           randomUUID(),
           receiverAccount.id,
+          senderAfter.toString(),
+          receiverAfter.toString(),
         ],
       );
       const totals = await client.query<{

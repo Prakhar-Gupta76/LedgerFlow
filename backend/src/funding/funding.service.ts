@@ -270,11 +270,12 @@ export class FundingService {
             ledger_account_id,
             entry_type,
             amount_minor,
-            currency
+            currency,
+            account_balance_after_minor
           )
           VALUES
-            ($1, $2, $3, 'DEBIT', $4, $5),
-            ($6, $2, $7, 'CREDIT', $4, $5)
+            ($1, $2, $3, 'DEBIT', $4, $5, NULL),
+            ($6, $2, $7, 'CREDIT', $4, $5, $8)
         `,
         [
           randomUUID(),
@@ -284,6 +285,7 @@ export class FundingService {
           dto.currency,
           randomUUID(),
           userLedgerAccount.id,
+          balanceAfter.toString(),
         ],
       );
 

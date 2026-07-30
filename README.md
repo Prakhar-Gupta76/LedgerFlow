@@ -72,6 +72,15 @@ receivers can read only completed or reversed transfers. The response exposes
 safe participant details, only the customer's balance snapshots and ledger
 entry, a financial timeline, and the customer-facing support reference.
 
+## Wallet statement
+
+`GET /api/v1/wallet/statement` returns the authenticated wallet's reconciled,
+ledger-backed statement for a selected period. It includes opening and closing
+balances, debit and credit totals, immutable running-balance snapshots, and
+cursor-paginated posted entries. `GET /api/v1/wallet/statement/export` applies
+the same authorized period query to CSV; the page also provides a print/PDF
+layout.
+
 ## Local setup
 
 Requirements: Node.js 20+, pnpm 7+, and PostgreSQL 16 (or Docker).
