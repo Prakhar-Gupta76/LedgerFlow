@@ -39,9 +39,10 @@ export class AnalyticsWorkerService implements OnModuleInit, OnModuleDestroy {
   private async processNext() {
     if (this.working) return;
     this.working = true;
-    const client = await this.database.connect();
+    let client: PoolClient | undefined;
     let jobId: string | null = null;
     try {
+      client = await this.database.connect();
       await client.query("BEGIN");
       const claimed = await client.query<AnalyticsJob>(
         `
@@ -121,7 +122,7 @@ export class AnalyticsWorkerService implements OnModuleInit, OnModuleDestroy {
       );
       await client.query("COMMIT");
     } catch (error) {
-      await client.query("ROLLBACK").catch(() => undefined);
+      await client?.query("ROLLBACK").catch(() => undefined);
       if (jobId) {
         await this.database
           .query(
@@ -150,7 +151,7 @@ export class AnalyticsWorkerService implements OnModuleInit, OnModuleDestroy {
         error instanceof Error ? error.message : "Analytics processing failed",
       );
     } finally {
-      client.release();
+      client?.release();
       this.working = false;
     }
   }

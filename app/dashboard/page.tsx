@@ -358,10 +358,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className={styles.headerActions}>
-            <button className={styles.notificationButton} type="button">
+            <Link className={styles.notificationButton} href="/notifications">
               <Bell size={19} />
               {data.unreadNotificationCount > 0 && <span />}
-            </button>
+            </Link>
             <div className={styles.avatar}>
               {data.customer.fullName
                 .split(" ")

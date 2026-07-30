@@ -90,6 +90,15 @@ updates totals, volume points, frequent recipients, averages, success rates,
 and freshness metadata. Analytics remains informational and never determines
 the authoritative wallet balance.
 
+## Notifications
+
+`GET /api/v1/notifications` returns only the authenticated customer's
+cursor-paginated in-app notifications with unread, type, severity, and date
+filters. Customers can idempotently mark one or all notifications read. A
+PostgreSQL-backed worker creates welcome, funding, transfer, failure, and
+reversal notifications in the same transaction as its processed-job marker;
+notification delivery never controls financial correctness.
+
 ## Local setup
 
 Requirements: Node.js 20+, pnpm 7+, and PostgreSQL 16 (or Docker).
