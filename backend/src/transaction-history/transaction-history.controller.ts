@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Param,
   Query,
   Req,
   Res,
@@ -42,5 +43,13 @@ export class TransactionHistoryController {
         .slice(0, 10)}.csv"`,
     );
     return csv;
+  }
+
+  @Get(":transactionId")
+  getDetails(
+    @Req() request: AuthenticatedRequest,
+    @Param("transactionId") transactionId: string,
+  ) {
+    return this.history.getDetails(request.user.sub, transactionId);
   }
 }

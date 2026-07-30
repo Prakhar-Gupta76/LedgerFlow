@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { DatabaseService } from "../database/database.service";
@@ -50,8 +51,47 @@ type CursorPayload = {
   activityKey: string;
 };
 
+type TransferDetailsRow = {
+  id: string;
+  transfer_reference: string;
+  sender_wallet_id: string;
+  receiver_wallet_id: string;
+  sender_user_id: string;
+  receiver_user_id: string;
+  sender_name: string;
+  receiver_name: string;
+  sender_wallet_number: string;
+  receiver_wallet_number: string;
+  amount_minor: string;
+  currency: string;
+  note: string | null;
+  status: "PENDING" | "COMPLETED" | "FAILED" | "REVERSED";
+  sender_balance_before_minor: string | null;
+  sender_balance_after_minor: string | null;
+  receiver_balance_before_minor: string | null;
+  receiver_balance_after_minor: string | null;
+  failure_code: string | null;
+  initiated_at: Date;
+  completed_at: Date | null;
+  failed_at: Date | null;
+  reversed_at: Date | null;
+};
+
+type LedgerDetailsRow = {
+  posted_at: Date;
+  entry_type: "DEBIT" | "CREDIT" | null;
+  amount_minor: string | null;
+  currency: string | null;
+  reversal_posted_at: Date | null;
+  reversal_entry_type: "DEBIT" | "CREDIT" | null;
+  reversal_amount_minor: string | null;
+  reversal_currency: string | null;
+};
+
 @Injectable()
 export class TransactionHistoryService {
+  private readonly logger = new Logger(TransactionHistoryService.name);
+
   constructor(private readonly database: DatabaseService) {}
 
   async getHistory(userId: string, query: HistoryQueryDto) {
@@ -211,6 +251,192 @@ export class TransactionHistoryService {
     return [header.join(","), ...lines].join("\r\n");
   }
 
+  async getDetails(userId: string, transactionId: string) {
+    if (!this.isUuid(transactionId)) throw this.transactionNotFound();
+
+    const result = await this.database.query<TransferDetailsRow>(
+      `
+        SELECT
+          t.id,
+          t.transfer_reference,
+          t.sender_wallet_id,
+          t.receiver_wallet_id,
+          sender_wallet.user_id AS sender_user_id,
+          receiver_wallet.user_id AS receiver_user_id,
+          sender_user.full_name AS sender_name,
+          receiver_user.full_name AS receiver_name,
+          sender_wallet.wallet_number AS sender_wallet_number,
+          receiver_wallet.wallet_number AS receiver_wallet_number,
+          t.amount_minor,
+          t.currency,
+          t.note,
+          t.status,
+          t.sender_balance_before_minor,
+          t.sender_balance_after_minor,
+          t.receiver_balance_before_minor,
+          t.receiver_balance_after_minor,
+          t.failure_code,
+          t.initiated_at,
+          t.completed_at,
+          t.failed_at,
+          t.reversed_at
+        FROM transfers t
+        JOIN wallets sender_wallet ON sender_wallet.id = t.sender_wallet_id
+        JOIN users sender_user ON sender_user.id = sender_wallet.user_id
+        JOIN wallets receiver_wallet ON receiver_wallet.id = t.receiver_wallet_id
+        JOIN users receiver_user ON receiver_user.id = receiver_wallet.user_id
+        WHERE t.id = $1
+          AND (
+            sender_wallet.user_id = $2
+            OR (
+              receiver_wallet.user_id = $2
+              AND t.status IN ('COMPLETED', 'REVERSED')
+            )
+          )
+      `,
+      [transactionId, userId],
+    );
+    const transfer = result.rows[0];
+    if (!transfer) throw this.transactionNotFound();
+
+    const direction =
+      transfer.sender_user_id === userId ? ("SENT" as const) : ("RECEIVED" as const);
+    const customerWalletId =
+      direction === "SENT"
+        ? transfer.sender_wallet_id
+        : transfer.receiver_wallet_id;
+    const expectedEntry = direction === "SENT" ? "DEBIT" : "CREDIT";
+    const expectedReversalEntry = direction === "SENT" ? "CREDIT" : "DEBIT";
+    const ledger = await this.readCustomerLedger(
+      transfer.id,
+      customerWalletId,
+    );
+    const originalLedgerValid =
+      ledger?.entry_type === expectedEntry &&
+      ledger.amount_minor === transfer.amount_minor &&
+      ledger.currency?.trim() === transfer.currency.trim();
+    const reversalLedgerValid =
+      transfer.status !== "REVERSED" ||
+      (originalLedgerValid &&
+        ledger?.reversal_entry_type === expectedReversalEntry &&
+        ledger.reversal_amount_minor === transfer.amount_minor &&
+        ledger.reversal_currency?.trim() === transfer.currency.trim());
+
+    if (
+      (transfer.status === "COMPLETED" && !originalLedgerValid) ||
+      (transfer.status === "REVERSED" && !reversalLedgerValid)
+    ) {
+      this.logger.error(
+        `Ledger consistency check failed for transfer ${transfer.id} and wallet ${customerWalletId}.`,
+      );
+    }
+
+    const signedEffect =
+      direction === "SENT"
+        ? `-${transfer.amount_minor}`
+        : transfer.amount_minor;
+    const balanceBeforeMinor =
+      direction === "SENT"
+        ? transfer.sender_balance_before_minor
+        : transfer.receiver_balance_before_minor;
+    const balanceAfterMinor =
+      direction === "SENT"
+        ? transfer.sender_balance_after_minor
+        : transfer.receiver_balance_after_minor;
+    const timeline = [
+      {
+        type: "INITIATED",
+        label: "Transfer initiated",
+        occurredAt: transfer.initiated_at.toISOString(),
+      },
+      ...(originalLedgerValid && ledger
+        ? [
+            {
+              type: "LEDGER_POSTED",
+              label: "Ledger entry posted",
+              occurredAt: ledger.posted_at.toISOString(),
+            },
+          ]
+        : []),
+      ...(transfer.completed_at
+        ? [
+            {
+              type: "COMPLETED",
+              label: "Transfer completed",
+              occurredAt: transfer.completed_at.toISOString(),
+            },
+          ]
+        : []),
+      ...(transfer.failed_at
+        ? [
+            {
+              type: "FAILED",
+              label: "Transfer unsuccessful",
+              occurredAt: transfer.failed_at.toISOString(),
+            },
+          ]
+        : []),
+      ...(transfer.reversed_at
+        ? [
+            ...(reversalLedgerValid && ledger?.reversal_posted_at
+              ? [
+                  {
+                    type: "REVERSAL_POSTED",
+                    label: "Reversal ledger entry posted",
+                    occurredAt: ledger.reversal_posted_at.toISOString(),
+                  },
+                ]
+              : []),
+            {
+              type: "REVERSED",
+              label: "Transfer reversed",
+              occurredAt: transfer.reversed_at.toISOString(),
+            },
+          ]
+        : []),
+    ].sort((left, right) => left.occurredAt.localeCompare(right.occurredAt));
+
+    return {
+      id: transfer.id,
+      transferReference: transfer.transfer_reference,
+      status: transfer.status,
+      direction,
+      amountMinor: transfer.amount_minor,
+      currency: transfer.currency.trim(),
+      note: transfer.note,
+      participants: {
+        sender: {
+          fullName: transfer.sender_name,
+          maskedWalletNumber: this.maskWalletNumber(
+            transfer.sender_wallet_number,
+          ),
+          isYou: direction === "SENT",
+        },
+        receiver: {
+          fullName: transfer.receiver_name,
+          maskedWalletNumber: this.maskWalletNumber(
+            transfer.receiver_wallet_number,
+          ),
+          isYou: direction === "RECEIVED",
+        },
+      },
+      balanceEffectMinor:
+        transfer.status === "COMPLETED" ? signedEffect : "0",
+      originalBalanceEffectMinor: signedEffect,
+      balanceBeforeMinor,
+      balanceAfterMinor,
+      failureMessage:
+        direction === "SENT" && transfer.status === "FAILED"
+          ? this.safeFailure(transfer.failure_code)
+          : null,
+      initiatedAt: transfer.initiated_at.toISOString(),
+      completedAt: transfer.completed_at?.toISOString() ?? null,
+      failedAt: transfer.failed_at?.toISOString() ?? null,
+      reversedAt: transfer.reversed_at?.toISOString() ?? null,
+      timeline,
+    };
+  }
+
   private async getWallet(userId: string) {
     const result = await this.database.query<WalletRow>(
       `
@@ -317,7 +543,10 @@ export class TransactionHistoryService {
         : null,
       occurredAt: row.occurred_at.toISOString(),
       completedAt: row.completed_at?.toISOString() ?? null,
-      detailPath: `/transactions/${row.source_id}`,
+      detailPath:
+        row.source_type === "TRANSFER"
+          ? `/transactions/${row.source_id}`
+          : "/wallet/statement",
     };
   }
 
@@ -374,5 +603,79 @@ export class TransactionHistoryService {
 
   private csvCell(value: string) {
     return `"${value.replaceAll('"', '""')}"`;
+  }
+
+  private async readCustomerLedger(
+    transferId: string,
+    customerWalletId: string,
+  ) {
+    const result = await this.database.query<LedgerDetailsRow>(
+      `
+        SELECT
+          original.posted_at,
+          customer_entry.entry_type,
+          customer_entry.amount_minor,
+          customer_entry.currency,
+          reversal.posted_at AS reversal_posted_at,
+          reversal_entry.entry_type AS reversal_entry_type,
+          reversal_entry.amount_minor AS reversal_amount_minor,
+          reversal_entry.currency AS reversal_currency
+        FROM ledger_transactions original
+        LEFT JOIN ledger_accounts customer_account
+          ON customer_account.wallet_id = $2
+          AND customer_account.account_type = 'USER_WALLET'
+          AND customer_account.status = 'ACTIVE'
+        LEFT JOIN ledger_entries customer_entry
+          ON customer_entry.ledger_transaction_id = original.id
+          AND customer_entry.ledger_account_id = customer_account.id
+        LEFT JOIN ledger_transactions reversal
+          ON reversal.reversal_of_id = original.id
+        LEFT JOIN ledger_entries reversal_entry
+          ON reversal_entry.ledger_transaction_id = reversal.id
+          AND reversal_entry.ledger_account_id = customer_account.id
+        WHERE original.transaction_type = 'WALLET_TRANSFER'
+          AND original.reference_id = $1
+        LIMIT 1
+      `,
+      [transferId, customerWalletId],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  private safeFailure(code: string | null) {
+    const messages: Record<string, string> = {
+      INSUFFICIENT_FUNDS:
+        "You do not have enough balance for this transfer.",
+      TRANSFER_LIMIT_EXCEEDED:
+        "This transfer exceeds the permitted limit.",
+      RECIPIENT_UNAVAILABLE:
+        "The selected recipient cannot receive this transfer.",
+      WALLET_UNAVAILABLE: "Your wallet is currently unavailable.",
+      CURRENCY_MISMATCH:
+        "The wallets do not support the same currency.",
+      PROCESSING_ERROR:
+        "The transfer could not be completed. Please try again later.",
+    };
+    return (
+      messages[code ?? ""] ??
+      "The transfer could not be completed. Please try again later."
+    );
+  }
+
+  private maskWalletNumber(walletNumber: string) {
+    return `•••• ${walletNumber.slice(-4)}`;
+  }
+
+  private isUuid(value: string) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    );
+  }
+
+  private transactionNotFound() {
+    return new NotFoundException({
+      code: "TRANSACTION_NOT_FOUND",
+      message: "Transaction not found.",
+    });
   }
 }

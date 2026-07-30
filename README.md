@@ -64,6 +64,14 @@ totals count only completed monetary activity. `GET
 /api/v1/transactions/export` applies the same authorized filters to a CSV
 download without storing export records.
 
+## Transaction details
+
+`GET /api/v1/transactions/:id` returns one wallet transfer from the
+authenticated customer's perspective. Senders can read every transfer state;
+receivers can read only completed or reversed transfers. The response exposes
+safe participant details, only the customer's balance snapshots and ledger
+entry, a financial timeline, and the customer-facing support reference.
+
 ## Local setup
 
 Requirements: Node.js 20+, pnpm 7+, and PostgreSQL 16 (or Docker).
