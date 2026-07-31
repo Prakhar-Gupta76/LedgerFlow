@@ -169,6 +169,14 @@ export class RegistrationService {
 
       await client.query(
         `
+          INSERT INTO notification_preferences (user_id)
+          VALUES ($1)
+        `,
+        [userId],
+      );
+
+      await client.query(
+        `
           INSERT INTO ledger_accounts (
             id,
             account_code,

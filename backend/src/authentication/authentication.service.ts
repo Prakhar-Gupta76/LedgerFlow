@@ -213,6 +213,7 @@ export class AuthenticationService {
 
       const refreshToken = randomBytes(48).toString("base64url");
       const refreshTokenExpiresAt = new Date(Date.now() + this.refreshTokenTtlMs);
+      const sessionId = randomUUID();
       await client.query(
         `
           UPDATE user_credentials
@@ -236,7 +237,7 @@ export class AuthenticationService {
           VALUES ($1, $2, $3, $4, $5, $6)
         `,
         [
-          randomUUID(),
+          sessionId,
           account.id,
           this.sha256(refreshToken),
           refreshTokenExpiresAt,
@@ -254,7 +255,7 @@ export class AuthenticationService {
       transactionOpen = false;
 
       return {
-        accessToken: await this.createAccessToken(account),
+        accessToken: await this.createAccessToken(account, sessionId),
         accessTokenExpiresIn: this.accessTokenTtlSeconds,
         refreshToken,
         refreshTokenExpiresAt,
@@ -327,10 +328,13 @@ export class AuthenticationService {
       transactionOpen = false;
 
       return {
-        accessToken: await this.createAccessToken({
-          id: session.user_id,
-          role: session.role,
-        }),
+        accessToken: await this.createAccessToken(
+          {
+            id: session.user_id,
+            role: session.role,
+          },
+          session.id,
+        ),
         accessTokenExpiresIn: this.accessTokenTtlSeconds,
         refreshToken: rotatedToken,
         refreshTokenExpiresAt,
@@ -589,9 +593,12 @@ export class AuthenticationService {
     }
   }
 
-  private createAccessToken(account: { id: string; role: string }) {
+  private createAccessToken(
+    account: { id: string; role: string },
+    sessionId?: string,
+  ) {
     return this.jwt.signAsync(
-      { sub: account.id, role: account.role },
+      { sub: account.id, role: account.role, sid: sessionId },
       {
         secret: this.jwtSecret,
         expiresIn: this.accessTokenTtlSeconds,

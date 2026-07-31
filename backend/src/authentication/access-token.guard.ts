@@ -11,6 +11,7 @@ import type { Request } from "express";
 export type AccessTokenUser = {
   sub: string;
   role: "CUSTOMER" | "ADMIN";
+  sid?: string;
 };
 
 export type AuthenticatedRequest = Request & {

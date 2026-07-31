@@ -64,7 +64,10 @@ export class NotificationWorkerService implements OnModuleInit, OnModuleDestroy 
             'CREATE_FUNDING_NOTIFICATION',
             'CREATE_TRANSFER_NOTIFICATIONS',
             'CREATE_FAILED_TRANSFER_NOTIFICATION',
-            'CREATE_REVERSAL_NOTIFICATIONS'
+            'CREATE_REVERSAL_NOTIFICATIONS',
+            'account.password.changed',
+            'account.closure.requested',
+            'account.closure.cancelled'
           )
             AND (
               status IN ('PENDING', 'FAILED')
@@ -172,6 +175,49 @@ export class NotificationWorkerService implements OnModuleInit, OnModuleDestroy 
     client: PoolClient,
     job: NotificationJob,
   ): Promise<NotificationInput[]> {
+    if (job.job_type === "account.password.changed") {
+      const userId = this.payloadUserId(job);
+      await this.assertUserExists(client, userId);
+      return [
+        {
+          userId,
+          type: "ACCOUNT_SECURITY",
+          severity: "CRITICAL",
+          title: "Password changed",
+          message:
+            "Your LedgerFlow password was changed. Review your active sessions if this was not you.",
+          resourceType: "USER_ACCOUNT",
+          resourceId: userId,
+          actionPath: "/settings",
+        },
+      ];
+    }
+
+    if (
+      job.job_type === "account.closure.requested" ||
+      job.job_type === "account.closure.cancelled"
+    ) {
+      const userId = this.payloadUserId(job);
+      await this.assertUserExists(client, userId);
+      const requested = job.job_type === "account.closure.requested";
+      return [
+        {
+          userId,
+          type: "SYSTEM_MESSAGE",
+          severity: requested ? "WARNING" : "INFO",
+          title: requested
+            ? "Account closure requested"
+            : "Account closure request cancelled",
+          message: requested
+            ? "Your account closure request is pending review. Your account and wallet have not been deleted."
+            : "Your pending account closure request was cancelled.",
+          resourceType: "USER_ACCOUNT",
+          resourceId: userId,
+          actionPath: "/settings",
+        },
+      ];
+    }
+
     if (
       job.job_type === "USER_REGISTERED" ||
       job.job_type === "CREATE_WELCOME_NOTIFICATION"
@@ -354,6 +400,7 @@ export class NotificationWorkerService implements OnModuleInit, OnModuleDestroy 
     jobId: string,
     notification: NotificationInput,
   ) {
+    if (!(await this.shouldDeliver(client, notification))) return;
     await client.query(
       `
         INSERT INTO notifications (
@@ -397,6 +444,47 @@ export class NotificationWorkerService implements OnModuleInit, OnModuleDestroy 
         notification.actionPath,
       ],
     );
+  }
+
+  private async shouldDeliver(
+    client: PoolClient,
+    notification: NotificationInput,
+  ) {
+    const fieldByType: Record<string, string> = {
+      WALLET_FUNDED: "wallet_funding_enabled",
+      TRANSFER_SENT: "transfer_sent_enabled",
+      TRANSFER_RECEIVED: "transfer_received_enabled",
+      TRANSFER_FAILED: "transfer_failed_enabled",
+      TRANSFER_REVERSED: "transfer_reversed_enabled",
+      SYSTEM_MESSAGE: "system_messages_enabled",
+    };
+    const field = fieldByType[notification.type];
+    if (!field) return true;
+    const result = await client.query<{ enabled: boolean }>(
+      `
+        SELECT COALESCE(
+          (SELECT ${field} FROM notification_preferences WHERE user_id = $1),
+          TRUE
+        ) AS enabled
+      `,
+      [notification.userId],
+    );
+    return result.rows[0]?.enabled !== false;
+  }
+
+  private payloadUserId(job: NotificationJob) {
+    const value = job.payload.userId;
+    if (typeof value !== "string") {
+      throw new Error("Notification job user was not provided.");
+    }
+    return value;
+  }
+
+  private async assertUserExists(client: PoolClient, userId: string) {
+    const result = await client.query("SELECT 1 FROM users WHERE id = $1", [
+      userId,
+    ]);
+    if (!result.rows[0]) throw new Error("Notification user was not found.");
   }
 
   private money(amountMinor: string, currency: string) {

@@ -13,6 +13,7 @@ import { TransactionHistoryModule } from "./transaction-history/transaction-hist
 import { WalletStatementModule } from "./wallet-statement/wallet-statement.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
 import { NotificationsModule } from "./notifications/notifications.module";
+import { SettingsModule } from "./settings/settings.module";
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { NotificationsModule } from "./notifications/notifications.module";
     WalletStatementModule,
     AnalyticsModule,
     NotificationsModule,
+    SettingsModule,
   ],
   controllers: [HealthController],
   providers: [
