@@ -166,7 +166,10 @@ export default function LoginPage() {
               <strong>{login.user.email}</strong>
             </span>
           </div>
-          <Link className={styles.primaryButton} href="/dashboard">
+          <Link
+            className={styles.primaryButton}
+            href={login.user.role === "ADMIN" ? "/admin" : "/dashboard"}
+          >
             Continue to dashboard
             <ArrowRight size={18} />
           </Link>
