@@ -67,7 +67,10 @@ export class NotificationWorkerService implements OnModuleInit, OnModuleDestroy 
             'CREATE_REVERSAL_NOTIFICATIONS',
             'account.password.changed',
             'account.closure.requested',
-            'account.closure.cancelled'
+            'account.closure.cancelled',
+            'account.suspended',
+            'account.reactivated',
+            'account.closed'
           )
             AND (
               status IN ('PENDING', 'FAILED')
@@ -186,6 +189,47 @@ export class NotificationWorkerService implements OnModuleInit, OnModuleDestroy 
           title: "Password changed",
           message:
             "Your LedgerFlow password was changed. Review your active sessions if this was not you.",
+          resourceType: "USER_ACCOUNT",
+          resourceId: userId,
+          actionPath: "/settings",
+        },
+      ];
+    }
+
+    if (
+      job.job_type === "account.suspended" ||
+      job.job_type === "account.reactivated" ||
+      job.job_type === "account.closed"
+    ) {
+      const userId = this.payloadUserId(job);
+      await this.assertUserExists(client, userId);
+      const content = {
+        "account.suspended": {
+          severity: "CRITICAL" as const,
+          title: "Account suspended",
+          message:
+            "Your LedgerFlow account was suspended by an administrator and active sessions were signed out.",
+        },
+        "account.reactivated": {
+          severity: "INFO" as const,
+          title: "Account reactivated",
+          message:
+            "Your LedgerFlow customer account was reactivated after administrator review.",
+        },
+        "account.closed": {
+          severity: "CRITICAL" as const,
+          title: "Account closed",
+          message:
+            "Your LedgerFlow customer account and virtual wallet were closed after review.",
+        },
+      }[job.job_type];
+      return [
+        {
+          userId,
+          type: "ACCOUNT_SECURITY",
+          severity: content.severity,
+          title: content.title,
+          message: content.message,
           resourceType: "USER_ACCOUNT",
           resourceId: userId,
           actionPath: "/settings",

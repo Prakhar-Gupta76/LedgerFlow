@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AdminDashboardModule } from "./admin-dashboard/admin-dashboard.module";
+import { AdminUsersModule } from "./admin-users/admin-users.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
 import { AuthenticationModule } from "./authentication/authentication.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
@@ -32,6 +33,7 @@ import { WalletStatementModule } from "./wallet-statement/wallet-statement.modul
     NotificationsModule,
     SettingsModule,
     AdminDashboardModule,
+    AdminUsersModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
