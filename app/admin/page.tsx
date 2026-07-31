@@ -282,6 +282,7 @@ export default function AdminDashboardPage() {
         <nav>
           <a className={styles.active} href="#overview"><LayoutDashboard /> Overview</a>
           <Link href="/admin/users"><UsersRound /> User management</Link>
+          <Link href="/admin/wallets"><WalletCards /> Wallet management</Link>
           <a href="#transfers"><ArrowRightLeft /> Transfer health</a>
           <a href="#jobs"><Database /> Job processing</a>
           <a href="#security"><ShieldAlert /> Security signals {alerts > 0 && <b>{alerts}</b>}</a>

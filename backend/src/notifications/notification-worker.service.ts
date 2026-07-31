@@ -70,7 +70,9 @@ export class NotificationWorkerService implements OnModuleInit, OnModuleDestroy 
             'account.closure.cancelled',
             'account.suspended',
             'account.reactivated',
-            'account.closed'
+            'account.closed',
+            'wallet.suspended',
+            'wallet.reactivated'
           )
             AND (
               status IN ('PENDING', 'FAILED')
@@ -233,6 +235,29 @@ export class NotificationWorkerService implements OnModuleInit, OnModuleDestroy 
           resourceType: "USER_ACCOUNT",
           resourceId: userId,
           actionPath: "/settings",
+        },
+      ];
+    }
+
+    if (
+      job.job_type === "wallet.suspended" ||
+      job.job_type === "wallet.reactivated"
+    ) {
+      const userId = this.payloadUserId(job);
+      await this.assertUserExists(client, userId);
+      const suspended = job.job_type === "wallet.suspended";
+      return [
+        {
+          userId,
+          type: "WALLET_STATUS_CHANGED",
+          severity: suspended ? "CRITICAL" : "INFO",
+          title: suspended ? "Wallet suspended" : "Wallet reactivated",
+          message: suspended
+            ? "Your virtual wallet was suspended by an administrator. Its balance and transaction history were not changed."
+            : "Your virtual wallet was reactivated after administrator review.",
+          resourceType: "WALLET",
+          resourceId: job.resource_id,
+          actionPath: "/wallet/statement",
         },
       ];
     }

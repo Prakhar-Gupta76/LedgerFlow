@@ -390,6 +390,7 @@ export default function AdminUsersPage() {
         <nav>
           <Link href="/admin"><LayoutDashboard /> Dashboard</Link>
           <Link className={styles.active} href="/admin/users"><UsersRound /> User management</Link>
+          <Link href="/admin/wallets"><WalletCards /> Wallet management</Link>
         </nav>
         <div className={styles.protection}><ShieldCheck /><span><strong>Controlled access</strong><small>All actions are audited</small></span></div>
         <button onClick={() => void logout()}><LogOut /> Sign out</button>
