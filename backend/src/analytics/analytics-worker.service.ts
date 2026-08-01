@@ -4,6 +4,7 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { DatabaseService } from "../database/database.service";
 
@@ -120,30 +121,40 @@ export class AnalyticsWorkerService implements OnModuleInit, OnModuleDestroy {
         `,
         [job.id],
       );
+      await client.query(
+        `INSERT INTO background_job_attempts (
+           id, job_id, attempt_number, worker_id, outcome, started_at, completed_at
+         ) SELECT $2, id, attempt_count, $3, 'SUCCEEDED', last_attempt_at, NOW()
+           FROM background_jobs WHERE id = $1
+           ON CONFLICT (job_id, attempt_number) DO NOTHING`,
+        [job.id, randomUUID(), `ledgerflow-api-${process.pid}`],
+      );
       await client.query("COMMIT");
     } catch (error) {
       await client?.query("ROLLBACK").catch(() => undefined);
       if (jobId) {
         await this.database
           .query(
-            `
-              UPDATE background_jobs
-              SET
-                status = 'FAILED',
-                available_at = NOW() + INTERVAL '30 seconds',
-                locked_at = NULL,
-                locked_by = NULL,
-                last_error_code = 'ANALYTICS_PROCESSING_FAILED',
-                last_error_message = $2,
-                updated_at = NOW()
-              WHERE id = $1
-            `,
-            [
-              jobId,
-              error instanceof Error
-                ? error.message.slice(0, 1000)
-                : "Analytics processing failed",
-            ],
+            `WITH failed AS (
+               UPDATE background_jobs
+               SET attempt_count = attempt_count + 1,
+                   status = CASE WHEN attempt_count + 1 >= max_attempts
+                     THEN 'FAILED'::background_job_status ELSE 'PENDING'::background_job_status END,
+                   available_at = NOW() + LEAST(300, 30 * power(2, attempt_count)) * INTERVAL '1 second',
+                   locked_at = NULL, locked_by = NULL, last_attempt_at = NOW(),
+                   last_error_code = 'ANALYTICS_PROCESSING_FAILED',
+                   last_error_message = 'Analytics processing failed.', updated_at = NOW()
+               WHERE id = $1 RETURNING id, attempt_count, max_attempts, last_attempt_at
+             ) INSERT INTO background_job_attempts (
+               id, job_id, attempt_number, worker_id, outcome,
+               error_code, error_message, started_at, completed_at
+             ) SELECT $2, id, attempt_count, $3,
+               CASE WHEN attempt_count >= max_attempts
+                 THEN 'FAILED_PERMANENT'::background_job_attempt_outcome
+                 ELSE 'FAILED_RETRYABLE'::background_job_attempt_outcome END,
+               'ANALYTICS_PROCESSING_FAILED', 'Analytics processing failed.', last_attempt_at, NOW()
+             FROM failed ON CONFLICT (job_id, attempt_number) DO NOTHING`,
+            [jobId, randomUUID(), `ledgerflow-api-${process.pid}`],
           )
           .catch(() => undefined);
       }

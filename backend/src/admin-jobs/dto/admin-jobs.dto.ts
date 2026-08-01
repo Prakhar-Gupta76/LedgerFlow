@@ -1,0 +1,3 @@
+import{Transform}from"class-transformer";import{IsIn,IsInt,IsOptional,IsString,IsUUID,Length,Max,MaxLength,Min}from"class-validator";
+export class AdminJobsQueryDto{@IsOptional()@IsIn(["PENDING","PROCESSING","COMPLETED","FAILED"])status?:string;@IsOptional()@IsString()@MaxLength(100)jobType?:string;@IsOptional()@IsString()@MaxLength(50)resourceType?:string;@IsOptional()@IsString()@MaxLength(100)search?:string;@Transform(({value})=>Number(value??30))@IsInt()@Min(1)@Max(50)limit=30;@IsOptional()@IsString()cursor?:string}
+export class RetryJobDto{@IsUUID()idempotencyKey!:string;@IsString()@Length(3,100)reasonCode!:string;@IsString()@Length(3,500)reason!:string}

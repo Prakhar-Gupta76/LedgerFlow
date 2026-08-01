@@ -394,6 +394,7 @@ export default function AdminUsersPage() {
           <Link href="/admin/wallets"><WalletCards /> Wallet management</Link>
           <Link href="/admin/transfers"><Activity /> Transfer monitoring</Link>
           <Link href="/admin/ledger"><Database /> Ledger &amp; reconciliation</Link>
+          <Link href="/admin/jobs"><Clock3 /> Background jobs</Link>
         </nav>
         <div className={styles.protection}><ShieldCheck /><span><strong>Controlled access</strong><small>All actions are audited</small></span></div>
         <button onClick={() => void logout()}><LogOut /> Sign out</button>
