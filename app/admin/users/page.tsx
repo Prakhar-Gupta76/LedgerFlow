@@ -10,6 +10,7 @@ import {
   ChevronRight,
   CircleSlash2,
   Clock3,
+  Database,
   KeyRound,
   LayoutDashboard,
   LoaderCircle,
@@ -392,6 +393,7 @@ export default function AdminUsersPage() {
           <Link className={styles.active} href="/admin/users"><UsersRound /> User management</Link>
           <Link href="/admin/wallets"><WalletCards /> Wallet management</Link>
           <Link href="/admin/transfers"><Activity /> Transfer monitoring</Link>
+          <Link href="/admin/ledger"><Database /> Ledger &amp; reconciliation</Link>
         </nav>
         <div className={styles.protection}><ShieldCheck /><span><strong>Controlled access</strong><small>All actions are audited</small></span></div>
         <button onClick={() => void logout()}><LogOut /> Sign out</button>

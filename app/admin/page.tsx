@@ -284,6 +284,7 @@ export default function AdminDashboardPage() {
           <Link href="/admin/users"><UsersRound /> User management</Link>
           <Link href="/admin/wallets"><WalletCards /> Wallet management</Link>
           <Link href="/admin/transfers"><ArrowRightLeft /> Transfer monitoring</Link>
+          <Link href="/admin/ledger"><Database /> Ledger &amp; reconciliation</Link>
           <a href="#jobs"><Database /> Job processing</a>
           <a href="#security"><ShieldAlert /> Security signals {alerts > 0 && <b>{alerts}</b>}</a>
           <a href="#activity"><Activity /> System activity</a>
