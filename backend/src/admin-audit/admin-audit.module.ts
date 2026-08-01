@@ -1,0 +1,2 @@
+import{Module}from"@nestjs/common";import{AuthenticationModule}from"../authentication/authentication.module";import{DatabaseModule}from"../database/database.module";import{AdminAuditController}from"./admin-audit.controller";import{AdminAuditService}from"./admin-audit.service";
+@Module({imports:[DatabaseModule,AuthenticationModule],controllers:[AdminAuditController],providers:[AdminAuditService]})export class AdminAuditModule{}

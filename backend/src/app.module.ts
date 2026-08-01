@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AdminDashboardModule } from "./admin-dashboard/admin-dashboard.module";
 import { AdminLedgerModule } from "./admin-ledger/admin-ledger.module";
 import { AdminJobsModule } from "./admin-jobs/admin-jobs.module";
+import { AdminAuditModule } from "./admin-audit/admin-audit.module";
 import { AdminUsersModule } from "./admin-users/admin-users.module";
 import { AdminTransfersModule } from "./admin-transfers/admin-transfers.module";
 import { AdminWalletsModule } from "./admin-wallets/admin-wallets.module";
@@ -39,6 +40,7 @@ import { WalletStatementModule } from "./wallet-statement/wallet-statement.modul
     AdminDashboardModule,
     AdminLedgerModule,
     AdminJobsModule,
+    AdminAuditModule,
     AdminUsersModule,
     AdminWalletsModule,
     AdminTransfersModule,
