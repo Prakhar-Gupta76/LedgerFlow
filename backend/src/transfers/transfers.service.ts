@@ -436,6 +436,16 @@ export class TransfersService {
           receiverBefore.toString(),
         ],
       );
+      await client.query(
+        `
+          INSERT INTO transfer_status_history (
+            id, transfer_id, previous_status, new_status,
+            transition_source, actor_user_id
+          )
+          VALUES ($1, $2, NULL, 'PENDING', 'CUSTOMER_REQUEST', $3)
+        `,
+        [randomUUID(), transferId, userId],
+      );
 
       const senderUpdate = await client.query(
         `
@@ -569,6 +579,19 @@ export class TransfersService {
           RETURNING completed_at
         `,
         [transferId, senderAfter.toString(), receiverAfter.toString()],
+      );
+      await client.query(
+        `
+          INSERT INTO transfer_status_history (
+            id, transfer_id, previous_status, new_status,
+            transition_source, actor_user_id, occurred_at
+          )
+          VALUES (
+            $1, $2, 'PENDING', 'COMPLETED',
+            'TRANSFER_PROCESSOR', $3, $4
+          )
+        `,
+        [randomUUID(), transferId, userId, completed.rows[0].completed_at],
       );
       await client.query("COMMIT");
       transactionOpen = false;

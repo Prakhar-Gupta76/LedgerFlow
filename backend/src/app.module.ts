@@ -4,6 +4,7 @@ import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AdminDashboardModule } from "./admin-dashboard/admin-dashboard.module";
 import { AdminUsersModule } from "./admin-users/admin-users.module";
+import { AdminTransfersModule } from "./admin-transfers/admin-transfers.module";
 import { AdminWalletsModule } from "./admin-wallets/admin-wallets.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
 import { AuthenticationModule } from "./authentication/authentication.module";
@@ -36,6 +37,7 @@ import { WalletStatementModule } from "./wallet-statement/wallet-statement.modul
     AdminDashboardModule,
     AdminUsersModule,
     AdminWalletsModule,
+    AdminTransfersModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

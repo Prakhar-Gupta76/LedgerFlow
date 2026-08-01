@@ -307,7 +307,7 @@ export default function AdminWalletsPage() {
     <main className={styles.page}>
       <aside className={styles.sidebar}>
         <Brand /><p>ADMINISTRATION</p>
-        <nav><Link href="/admin"><LayoutDashboard /> Dashboard</Link><Link href="/admin/users"><UsersRound /> User management</Link><Link className={styles.active} href="/admin/wallets"><WalletCards /> Wallet management</Link></nav>
+        <nav><Link href="/admin"><LayoutDashboard /> Dashboard</Link><Link href="/admin/users"><UsersRound /> User management</Link><Link className={styles.active} href="/admin/wallets"><WalletCards /> Wallet management</Link><Link href="/admin/transfers"><Activity /> Transfer monitoring</Link></nav>
         <div className={styles.protection}><ShieldCheck /><span><strong>Accounting-safe</strong><small>No balance editing</small></span></div>
         <button onClick={() => void logout()}><LogOut /> Sign out</button>
       </aside>
