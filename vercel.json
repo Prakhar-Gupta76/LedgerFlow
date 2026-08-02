@@ -3,7 +3,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://ledgerflow-api-5rao.onrender.com/:path*"
+            "destination": "https://ledgerflow-api-5rao.onrender.com/api/:path*"
         }
     ]
 }
